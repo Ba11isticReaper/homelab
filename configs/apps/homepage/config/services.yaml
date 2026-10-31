@@ -1,0 +1,49 @@
+# href: where clicking a tile takes me (Tailscale names work anywhere)
+# widget.url: where Homepage fetches live data (LAN addresses, most direct)
+
+- Media:
+    - Jellyfin:
+        icon: jellyfin.png
+        href: https://jellyfin.<tailnet>.ts.net
+        description: Movies, shows, music
+        widget:
+          type: jellyfin
+          url: http://<jellyfin-lan-ip>:8096
+          key: "{{HOMEPAGE_VAR_JELLYFIN_KEY}}"
+          version: 2          # required for Jellyfin 10.12 and later
+          enableBlocks: true
+          enableNowPlaying: true
+
+- Network:
+    - Pi-hole:
+        icon: pi-hole.png
+        href: http://pihole.<tailnet>.ts.net/admin
+        description: Ad and tracker blocking
+        widget:
+          type: pihole
+          url: http://<pihole-lan-ip>
+          version: 6
+          key: "{{HOMEPAGE_VAR_PIHOLE_KEY}}"   # Pi-hole app password
+
+- Server:
+    - Proxmox:
+        icon: proxmox.png
+        href: https://<proxmox-lan-ip>:8006
+        description: Hypervisor (home network only)
+        widget:
+          type: proxmox
+          url: https://<proxmox-lan-ip>:8006
+          username: "{{HOMEPAGE_VAR_PROXMOX_USER}}"
+          password: "{{HOMEPAGE_VAR_PROXMOX_SECRET}}"
+    - Uptime Kuma:
+        icon: uptime-kuma.png
+        href: http://apps.<tailnet>.ts.net:3001
+        description: Service monitoring
+        widget:
+          type: uptimekuma
+          url: http://<apps-lan-ip>:3001
+          slug: homelab       # Uptime Kuma status page slug
+    - Cockpit:
+        icon: cockpit.png
+        href: https://apps.<tailnet>.ts.net:9090
+        description: Container management

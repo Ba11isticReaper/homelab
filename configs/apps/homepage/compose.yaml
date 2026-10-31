@@ -1,0 +1,17 @@
+# /opt/stacks/homepage/compose.yaml (CT 103, Podman)
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    restart: always
+    # Host networking: widgets reach services by LAN IP and Tailscale name.
+    # The dashboard is on port 3000 of the container host.
+    network_mode: host
+    # Secrets live in .env (chmod 600, not committed)
+    env_file: .env
+    environment:
+      # Only answer requests addressed to these exact host:port values
+      HOMEPAGE_ALLOWED_HOSTS: "<apps-lan-ip>:3000,<apps-tailscale-ip>:3000,apps.<tailnet>.ts.net:3000"
+    volumes:
+      - ./config:/app/config
+    # Deliberately no container-engine socket mount: a dashboard
+    # doesn't need root-equivalent control of every container.

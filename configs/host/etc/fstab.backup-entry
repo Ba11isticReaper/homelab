@@ -1,0 +1,5 @@
+# Line appended to /etc/fstab for the external backup drive.
+# Mounted by UUID (device names like sdc2 can change between boots).
+# nofail: boot continues if the drive is unplugged.
+# Validate with: findmnt --verify
+UUID=XXXX-XXXX  /mnt/backup  exfat  defaults,nofail,x-systemd.device-timeout=10s  0  0

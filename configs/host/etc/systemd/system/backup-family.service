@@ -1,0 +1,7 @@
+[Unit]
+Description=Back up Family media to WD drive
+RequiresMountsFor=/mnt/backup
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/backup-family.sh

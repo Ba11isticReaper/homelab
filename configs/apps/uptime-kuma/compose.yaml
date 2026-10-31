@@ -1,0 +1,12 @@
+# /opt/stacks/uptime-kuma/compose.yaml (CT 103, Podman)
+services:
+  uptime-kuma:
+    # "2" is the maintained major version; the old default tag points at v1
+    image: docker.io/louislam/uptime-kuma:2
+    # Brought back after reboots by podman-restart.service
+    restart: always
+    # Host networking so checks can resolve Tailscale MagicDNS names.
+    # The web UI is on port 3001 of the container host.
+    network_mode: host
+    volumes:
+      - ./data:/app/data

@@ -1,0 +1,19 @@
+# Added to /etc/samba/smb.conf in CT 101 (files)
+
+[global]
+   # macOS compatibility (Finder metadata, Mac-style server icon)
+   vfs objects = fruit streams_xattr
+   fruit:metadata = stream
+   fruit:model = MacSamba
+
+[media]
+   path = /srv/media
+   valid users = <samba-user>
+   read only = no
+   force user = <samba-user>
+   # New files 644, folders 755: always readable by the Jellyfin container
+   create mask = 0644
+   directory mask = 0755
+   # Not used: "veto files = /.DS_Store/" made Finder abort whole copies.
+   # .DS_Store creation is disabled on the Mac instead:
+   #   defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true

@@ -1,0 +1,11 @@
+# Secrets: never commit
+.env
+*.key
+*.pem
+*.crt
+
+# App data folders from stacks
+data/
+
+# OS clutter
+.DS_Store
