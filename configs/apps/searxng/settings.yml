@@ -1,4 +1,14 @@
 use_default_settings: true
+use_default_settings:
+  engines:
+    keep_only:
+      - duckduckgo
+      - duckduckgo images
+      - duckduckgo videos
+      - bing images
+      - bing
+      - brave
+      - wikipedia
 
 server:
   secret_key: "unused-set-via-env"

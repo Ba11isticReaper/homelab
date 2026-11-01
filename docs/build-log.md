@@ -151,48 +151,103 @@ paying for a media server license.
   conventions for movies and series, and an `extras/` folder for bonus
   features.
   
-## Day 4: SearXNG metasearch (CT 103)
+## SearXNG metasearch (CT 103, build session 4)
 
 ### Goal
-Replace search dependency on Google (and Apple's curated Safari engine list)
-with a self-hosted metasearch on my own hardware, reachable only from my
-devices, over Tailscale.
+
+Replace dependence on a commercial search engine with a self-hosted metasearch instance running on my own hardware, reachable only from my own devices over Tailscale. Listed on the roadmap as: *"SearXNG: private metasearch for my own devices over Tailscale."*
+
+### Why this one mattered
+
+Search is the highest-value data stream I produce. Before this build, every query went to a single provider along with my IP, device characteristics, and account linkage where applicable. SearXNG breaks the link between me as a person and my search history: the server sends queries upstream, strips identifying headers, randomizes user agents, and returns aggregated results. No account, no cookie continuity, no cross-site profile.
+
+Honest limitation recorded for future me: this is a single-user instance, so all upstream queries originate from one home IP. Upstream engines still see "someone at this address searched these things" — they just cannot attribute it to a person or device. Routing SearXNG's outbound traffic through a VPN or Tor would close that gap. Added to roadmap.
 
 ### Stack
-- `docker.io/searxng/searxng:2026.10.30-ffa88e3ba` (pinned) plus
-  `docker.io/valkey/valkey:8-alpine` — first multi-container stack on the Podman
-  host (searxng + valkey on the compose-internal network, valkey publishes no
-  ports).
-- First use of `.env` substitution for a Podman app's secret:
-  `SEARXNG_SECRET` read from a `600` `.env`, verified inside the container with
-  `podman exec searxng printenv SEARXNG_SECRET`.
-- `settings.yml` uses `use_default_settings: true` with limiter off
-  (single-user private instance), image proxy on (thumbnails fetched by the
-  server, not my browser), autocomplete disabled after learning the default
-  forwards keystrokes to DuckDuckGo's suggestion API.
-- Published at `http://<CT-103-IP>:8888`; the port bind covers both LAN and
-  the tailnet IP, so the phone reaches it today with no extra config.
-  `tailscale serve` HTTPS deliberately deferred.
+
+First multi-container stack on the Podman host — two services on a compose-internal network.
+
+- `docker.io/searxng/searxng:2026.10.30-ffa88e3ba` (pinned; tag verified by pulling the image directly)
+- `docker.io/valkey/valkey:8-alpine` — cache. Publishes **no ports**; reachable only from searxng over the stack network.
+
+Valkey replaced Redis in SearXNG's own tooling (Redis license change in 2024; the project moved to the Valkey fork). The `redis:` key in settings is deprecated in favor of `valkey:`. Not an optional bolt-on — it is part of the standard two-service shape now.
+
+### Configuration decisions
+
+- **`use_default_settings: true`** — inherit the image's built-in config and override only what is listed. Avoids hand-maintaining an engine list.
+- **`server.limiter: false`** — the limiter is abuse protection for public instances. It requires Valkey plus a reverse proxy passing `X-Forwarded-For`/`X-Real-IP`. Private single-user instance behind Tailscale has no abuse surface. Off.
+- **`server.image_proxy: true`** — result thumbnails are fetched by the server rather than my browser, so the sites hosting those images never see my device request them.
+- **`search.autocomplete: ""`** — disabled. The default forwards **partial keystrokes** to DuckDuckGo's suggestion API, not just completed queries. Partial queries are often more revealing than the final one. This was the largest remaining leak in the search path and is now closed.
+- **`use_default_settings.engines.keep_only`** — curated engine list instead of the full default set. Rationale: every enabled engine receives every query. Running the default set means dozens of providers see my search terms; running four means four do. Kept: `duckduckgo`, `bing`, `google`, `wikipedia`.
+
+### Secret handling — first use of the `.env` bridge for a Podman app
+
+Established pattern: configs stay readable and committable, secrets live in a `600` `.env`.
+
+- `openssl rand -hex 32` generates the key
+- Stored as `SEARXNG_SECRET` in `/opt/stacks/searxng/.env` (mode `600`)
+- Compose substitutes `${SEARXNG_SECRET}` at container creation
+- SearXNG's documented behavior: `server.secret_key` **is overwritten by** `${SEARXNG_SECRET}`. Environment takes precedence over `settings.yml`, which takes precedence over built-in defaults.
+- Verified end to end with `podman exec searxng printenv SEARXNG_SECRET`
+
+Result: `settings.yml` contains only a placeholder (`"unused-set-via-env"`) and is safe to commit. The real secret never touches a tracked file.
+
+Correction worth recording: I initially told myself this env-var path did not exist and planned to fall back to keeping `settings.yml` out of git entirely. That was wrong — it is a documented, first-class feature. Verify before retreating to a worse pattern.
+
+### Exposure
+
+Published on port `8888`, which binds all of CT 103's interfaces — LAN and tailnet alike. Tailnet-only access was the goal; the port bind delivered it as a side effect. LAN devices can also reach it, which was an accepted trade rather than an oversight (Pi-hole remains the only service intentionally answering on the LAN).
 
 ### Incident: crash loop from a fabricated mount
-**Symptom:** the searxng container flapped (running in `podman ps`, then
-"improper state" on exec) with
-`"/etc/searxng/settings.yml" is not a valid file, exiting`.
-**Investigation:** `ls -la /opt/stacks/searxng` showed `settings.yml` as an
-empty directory alongside a real file named `settings.yaml` — a one-letter
-filename typo.
-**Cause:** podman-compose was started before `settings.yml` existed; Podman
-fabricated a directory at the bind-mount path so the stack would come up.
-**Fix:** `podman-compose down`, `rmdir` the fabricated directory, `mv
-settings.yaml settings.yml`, `up -d`.
-**Lesson:** create every bind-mounted file before starting a stack; a mount
-target appearing after "successful" startup is a fabrication, not validation.
 
-### Client
-Safari on iOS cannot use a custom search engine (fixed list in Settings), so
-switched to Firefox for iOS: telemetry off, no Mozilla account, SearXNG added
-as a custom search engine (`http://<tailscale-ip>:8888/search?q=%s`) and set
-as default, then set Firefox as the default browser.
+See `troubleshooting.md` for the full writeup. Short version: podman-compose started before `settings.yml` existed, Podman fabricated an empty **directory** at the bind-mount path, and the container crash-looped on `"/etc/searxng/settings.yml" is not a valid file`. Root cause turned out to be one step earlier than the directory — a `.yaml` / `.yml` filename typo in nano.
+
+### Client migration (iPhone)
+
+Safari on iOS cannot use a custom search engine. The Settings → Search → Search Engine list is a fixed menu, and there is no import mechanism. This is unique among major browsers and is directly tied to the revenue from the default search slot.
+
+Switched to **Firefox for iOS**:
+
+- Telemetry and studies toggles off; no Mozilla account (so no Sync identifiers exist at all)
+- SearXNG added as a custom search engine: `https://apps.<tailnet>.ts.net/search?q=%s`
+- Set as default search engine, then Firefox set as the system default browser
+
+Note: every browser on iOS outside the EU is WebKit underneath, so "Firefox on iPhone" is WebKit with Firefox's UI and settings. The differences between iOS browsers live in interface and control, not engine.
+
+Considered and rejected: **Zen Browser** — desktop only, no iOS or Android build, and no published plans for one. (An unrelated app of a similar name exists on the App Store.) **Orion** remains an option to evaluate later; it is a native WebKit browser that can run desktop extensions and asks for a search engine on first launch.
+
+### HTTPS via `tailscale serve`
+
+Activated `tailscale serve --bg 8888` on CT 103, giving the machine a real Let's Encrypt certificate and proxying HTTPS to `127.0.0.1:8888`.
+
+Accepted trade, consistent with the Jellyfin machine: certificate issuance publishes the machine name into public Certificate Transparency logs. Machine names become public; IPs and services stay private.
+
+`SEARXNG_BASE_URL` updated to the HTTPS hostname with **no port** — serve listens on 443 externally and hands off to 8888 internally, so including `:8888` would make every generated link wrong. Required a full `podman-compose down && up -d`, since environment values are read only at container creation.
+
+Verified on the worst-case path: iPhone on cellular, WiFi off, Tailscale on — padlock present, search returns results.
+
+### Conceptual trap discovered: MagicDNS is not `tailscale serve`
+
+Worth recording because I fell into it. I believed CT 103 was already serving HTTPS because I was reaching `apps.<tailnet>.ts.net` in the browser. It was not.
+
+- **MagicDNS** is a naming feature. It maps `apps.<tailnet>.ts.net` → the machine's `100.x` address. Tailnet-wide, always on. Gives a *name*, no encryption.
+- **`tailscale serve`** is an HTTPS gatekeeper. Terminates TLS with a real certificate and proxies to a local port. Per-machine, per-port, opt-in.
+
+`tailscale serve status` on CT 103 returned `No serve config` — proving no HTTPS existed — while the hostname still resolved and worked over plain HTTP. "The name resolves" is not the same claim as "HTTPS exists." Query the system rather than trusting memory.
 
 ### Monitoring
-Uptime Kuma HTTP monitor against `127.0.0.1:8888`
+
+Two monitors, mirroring the Jellyfin pattern (process health vs. path health):
+
+- **`SearXNG (LAN)`** — HTTP check against `http://127.0.0.1:8888`. Kuma runs host-networked, so loopback tests the process itself, not the network path.
+- **`SearXNG (remote)`** — HTTPS check against `https://apps.<tailnet>.ts.net`. Tests the path my phone actually uses.
+
+Both verified by stopping and starting the container to watch them flap and recover. A monitor never observed firing is a monitor that cannot be trusted.
+
+Notification delivery caveat: Kuma → ntfy reaches the topic successfully (messages appear in the ntfy app), but pushes do not reach the iOS lock screen. Parked until ntfy is self-hosted, since the push relay is the suspected layer.
+
+### Known cosmetic log noise
+
+- `ahmia: can't register engine` / `torch: can't register engine` — Tor hidden-service engines failing to load outside a Tor setup. Resolved by engine curation (neither is in `keep_only`).
+- `missing config file: /etc/searxng/limiter.toml` — bot detection announcing it has no config. Limiter is off by design.
+- `X-Forwarded-For nor X-Real-IP header is set!` — see `troubleshooting.md`. Expected, inert, no fix warranted.

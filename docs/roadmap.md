@@ -15,13 +15,11 @@
 
 ## Services (Podman, CT 103)
 - [X] SearXNG: private metasearch for my own devices over Tailscale
-- [ ] `tailscale serve` HTTPS for the apps container (also covers the
+- [X] `tailscale serve` HTTPS for the apps container (also covers the
       X-Forwarded-For warning in searxng logs and the remote-path Uptime Kuma
       monitor)
-- [ ] Curate SearXNG engines (DuckDuckGo, Bing, Wikipedia, Google; removes
+- [X] Curate SearXNG engines (DuckDuckGo, Bing, Wikipedia, Google; removes
       the recurring ahmia/torch load errors)
-- [ ] Vaultwarden on CT 103 with backup integration before go-live
-- [ ] Self-hosted ntfy (alerts currently relay through public ntfy.sh)
 - [ ] beets: automated music tagging, art, genres, and lyrics from an inbox folder
 - [ ] Immich: phone photo backup, with the GPU shared into Podman for
       face recognition and search
@@ -29,6 +27,20 @@
 - [ ] AudioMuse: audio-analysis based "sounds like" mixes
 - [ ] multi-scrobbler: ListenBrainz scrobbling until a Jellyfin plugin
       supports the current release
+      
+## Follow-ons discovered during the SearXNG build
+
+- [ ] Route SearXNG's outbound requests through a VPN or Tor exit, so upstream
+      engines see an IP that is not my home address (closes the single-user
+      instance attribution gap)
+- [ ] Restrict the raw `:8888` port bind to loopback only, now that
+      `tailscale serve` is the front door (reduces exposed surface)
+- [ ] Evaluate Orion (Kagi) as an alternative iOS browser — native WebKit,
+      supports desktop extensions, prompts for search engine on first launch
+- [ ] Self-host ntfy (currently relaying through public ntfy.sh; also carries
+      the unresolved iOS lock-screen push delivery issue)
+- [ ] Vaultwarden on CT 103 — password/passkey autofill replacing iCloud
+      Keychain; requires backup integration designed before go-live
 
     
 
