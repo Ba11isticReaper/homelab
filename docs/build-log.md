@@ -150,3 +150,49 @@ paying for a media server license.
 - Staging folder pattern (`_incoming/`) for large files, TMDB naming
   conventions for movies and series, and an `extras/` folder for bonus
   features.
+  
+## Day 4: SearXNG metasearch (CT 103)
+
+### Goal
+Replace search dependency on Google (and Apple's curated Safari engine list)
+with a self-hosted metasearch on my own hardware, reachable only from my
+devices, over Tailscale.
+
+### Stack
+- `docker.io/searxng/searxng:2026.10.30-ffa88e3ba` (pinned) plus
+  `docker.io/valkey/valkey:8-alpine` — first multi-container stack on the Podman
+  host (searxng + valkey on the compose-internal network, valkey publishes no
+  ports).
+- First use of `.env` substitution for a Podman app's secret:
+  `SEARXNG_SECRET` read from a `600` `.env`, verified inside the container with
+  `podman exec searxng printenv SEARXNG_SECRET`.
+- `settings.yml` uses `use_default_settings: true` with limiter off
+  (single-user private instance), image proxy on (thumbnails fetched by the
+  server, not my browser), autocomplete disabled after learning the default
+  forwards keystrokes to DuckDuckGo's suggestion API.
+- Published at `http://<CT-103-IP>:8888`; the port bind covers both LAN and
+  the tailnet IP, so the phone reaches it today with no extra config.
+  `tailscale serve` HTTPS deliberately deferred.
+
+### Incident: crash loop from a fabricated mount
+**Symptom:** the searxng container flapped (running in `podman ps`, then
+"improper state" on exec) with
+`"/etc/searxng/settings.yml" is not a valid file, exiting`.
+**Investigation:** `ls -la /opt/stacks/searxng` showed `settings.yml` as an
+empty directory alongside a real file named `settings.yaml` — a one-letter
+filename typo.
+**Cause:** podman-compose was started before `settings.yml` existed; Podman
+fabricated a directory at the bind-mount path so the stack would come up.
+**Fix:** `podman-compose down`, `rmdir` the fabricated directory, `mv
+settings.yaml settings.yml`, `up -d`.
+**Lesson:** create every bind-mounted file before starting a stack; a mount
+target appearing after "successful" startup is a fabrication, not validation.
+
+### Client
+Safari on iOS cannot use a custom search engine (fixed list in Settings), so
+switched to Firefox for iOS: telemetry off, no Mozilla account, SearXNG added
+as a custom search engine (`http://<tailscale-ip>:8888/search?q=%s`) and set
+as default, then set Firefox as the default browser.
+
+### Monitoring
+Uptime Kuma HTTP monitor against `127.0.0.1:8888`

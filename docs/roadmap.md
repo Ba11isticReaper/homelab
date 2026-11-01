@@ -14,7 +14,14 @@
 - [ ] Planned reboot test: every container and service returns unattended
 
 ## Services (Podman, CT 103)
-- [ ] SearXNG: private metasearch for my own devices over Tailscale
+- [X] SearXNG: private metasearch for my own devices over Tailscale
+- [ ] `tailscale serve` HTTPS for the apps container (also covers the
+      X-Forwarded-For warning in searxng logs and the remote-path Uptime Kuma
+      monitor)
+- [ ] Curate SearXNG engines (DuckDuckGo, Bing, Wikipedia, Google; removes
+      the recurring ahmia/torch load errors)
+- [ ] Vaultwarden on CT 103 with backup integration before go-live
+- [ ] Self-hosted ntfy (alerts currently relay through public ntfy.sh)
 - [ ] beets: automated music tagging, art, genres, and lyrics from an inbox folder
 - [ ] Immich: phone photo backup, with the GPU shared into Podman for
       face recognition and search
@@ -22,6 +29,8 @@
 - [ ] AudioMuse: audio-analysis based "sounds like" mixes
 - [ ] multi-scrobbler: ListenBrainz scrobbling until a Jellyfin plugin
       supports the current release
+
+    
 
 ## Hardware
 - [ ] Swap the GTX 1060 for a GTX 1660 (Turing NVENC: better quality per
@@ -34,3 +43,4 @@
 ## Related project
 - A JavaFX front end for rsync transfers with verification and safe batch
   renaming (separate repository).
+
