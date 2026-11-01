@@ -1,0 +1,13 @@
+use_default_settings: true
+
+server:
+  secret_key: "unused-set-via-env"
+  limiter: false
+  image_proxy: true
+
+search:
+  autocomplete: ""
+
+
+valkey:
+  url: valkey://valkey:6379/0
