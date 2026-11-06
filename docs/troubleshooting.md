@@ -326,7 +326,7 @@ Create every bind-mounted file **before** starting a stack. A mount target that 
 
 ---
 
-## Incident #N+1 — `X-Forwarded-For` warning survives the fix that should have silenced it
+## 15 — `X-Forwarded-For` warning survives the fix that should have silenced it
 
 **Date:** 2026-11-01
 **Component:** CT 103 / SearXNG + `tailscale serve`
@@ -370,3 +370,27 @@ Silencing it would require inserting a real reverse proxy (nginx/Caddy) purely t
 **Lesson**
 
 A log line that survives a fix is not automatically proof the fix failed. Verify the premise before chasing the symptom — in this case the premise ("serve injects this header") was simply wrong, and the correct action was to stop, not to escalate. Recording a wrong prediction alongside its correction is more useful to future me than pretending the prediction was never made.
+
+
+## 16 — redirect into a path that is already a directory
+
+Date: 2026-11-06. Component: Mac workstation / repo staging.
+
+Symptom: pulling a compose file over SSH with
+`... > .../vaultwarden/compose.yaml` failed with
+`zsh: is a directory: .../compose.yaml`.
+
+Investigation: `ls -la` on the target's parent showed `compose.yaml` already
+existed — as a directory, not a file. An earlier folder-creation step had used
+the full intended file path, creating a directory named after the file.
+
+Root cause: shell redirects cannot write into a directory. The SSH chain, the
+`pct exec`, and the `cat` had all worked; the output simply had nowhere to go.
+
+Fix: `rmdir` on the offending directory — deliberately chosen over `rm -rf`,
+since `rmdir` refuses to delete anything non-empty and cannot destroy data by
+accident — then rerun the identical pull command.
+
+Lesson: when a redirect fails, inspect the destination before blaming the
+network chain. Prefer `rmdir` over `rm -rf` whenever the target is supposed to
+be empty; the refusal is a free safety check.

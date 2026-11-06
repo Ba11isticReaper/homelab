@@ -60,6 +60,14 @@ user on the host) and start automatically at boot.
 | 102 | pihole | 1 core, 512 MB RAM, 4 GB disk | Pi-hole v6, Quad9 upstream; Tailscale with `--accept-dns=false` |
 | 103 | apps | 4 cores, 6 GB RAM, 40 GB disk | `nesting=1,keyctl=1` for Podman; Cockpit web console; Tailscale |
 
+| Vaultwarden | Password manager | `127.0.0.1:8222`, HTTPS via `tailscale serve` (planned) |
+
+Data flow update: the music library is split into per-audience sibling
+libraries (`My Music`, `Family Music`, `Guest Music`) under one backed-up
+parent tree; each is a separate Jellyfin library. Shows and other bulk media
+sit outside the backed-up tree and are excluded from the nightly sync to the
+1 TB target.
+
 ### File ownership across containers
 
 Unprivileged containers shift user IDs by 100000 (container UID 1000 = host
@@ -124,3 +132,4 @@ mounted, which prevents it from silently filling the SSD. See
 
 Known gaps (no offsite copy, no RAID, restore not yet rehearsed) are tracked in
 [security.md](security.md) and [roadmap.md](roadmap.md).
+

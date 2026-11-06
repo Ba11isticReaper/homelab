@@ -117,3 +117,32 @@ journalctl -u <service> -n 40 --no-pager       # any systemd service
 pct exec 100 -- ls -t /var/log/jellyfin/      # Jellyfin logs, newest first
 podman logs --tail 40 <container>              # Podman apps, inside CT 103
 ```
+
+### Syncing live configs into the repo
+
+Run from the Mac after changing anything on the server. Then review the
+changes in GitHub Desktop, commit, and push.
+
+Single file out of a container — no SSH inside the CT required:
+
+    ssh root@pve-host "pct exec 103 -- cat /opt/stacks/<app>/compose.yaml" \
+      > ~/Documents/homelab/configs/apps/<app>/compose.yaml
+
+Whole stack folder at once (tar streams through the same pipe):
+
+    ssh root@pve-host "pct exec 103 -- tar -C /opt/stacks -cf - <app>" \
+      | tar -C ~/Documents/homelab/configs/apps -xf -
+
+Push a repo file back into a container on deploy:
+
+    ssh root@pve-host "pct exec 103 -- bash -c 'cat > /opt/stacks/<app>/compose.yaml'" \
+      < ~/Documents/homelab/configs/apps/<app>/compose.yaml
+
+Rules of the road:
+
+- Never pull or push `.env` files; they hold secrets and stay on the server.
+- Verify a pulled file with `head` — an empty file means the remote path was
+  wrong, not that the pull worked.
+- Add a `# pulled from CT 103 on YYYY-MM-DD` comment when staleness matters.
+- Beware `pct push` vs `pct pull` late at night: push overwrites the live
+  config.

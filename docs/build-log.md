@@ -251,3 +251,49 @@ Notification delivery caveat: Kuma → ntfy reaches the topic successfully (mess
 - `ahmia: can't register engine` / `torch: can't register engine` — Tor hidden-service engines failing to load outside a Tor setup. Resolved by engine curation (neither is in `keep_only`).
 - `missing config file: /etc/searxng/limiter.toml` — bot detection announcing it has no config. Limiter is off by design.
 - `X-Forwarded-For nor X-Real-IP header is set!` — see `troubleshooting.md`. Expected, inert, no fix warranted.
+
+## Day 4: password manager, config syncing, and taming the backup job
+
+### Vaultwarden on CT 103
+
+Goal: replace the last remaining cloud service — the password manager — with a
+self-hosted one, completing the project goal of zero paid cloud dependencies.
+
+Chosen shape, and why each line matters:
+
+- Port published as `127.0.0.1:8222:80` — loopback only. Nothing on the LAN or
+  tailnet can reach the web UI directly. External access will follow the
+  Jellyfin pattern: `tailscale serve` terminating HTTPS at the Tailscale layer
+  and forwarding to loopback.
+- `SIGNUPS_ALLOWED=false` — even if reachability changes later, strangers
+  cannot register accounts.
+- Image pinned to `docker.io/vaultwarden/server:1.37.4` — no surprise upgrades.
+- `DOMAIN` and `ADMIN_TOKEN` come from a `.env` file on the server, never from
+  the repo. The compose file is safe to publish precisely because it contains
+  no secrets; the `.env` beside it is not.
+
+### Pulling live configs into the repo
+
+The repo lives on the Mac; the live configs live inside the containers, which
+have no users or SSH. The bridge is a one-line pipe through the Proxmox host,
+which can reach into any container without a login inside it:
+
+    ssh root@pve-host "pct exec 103 -- cat /opt/stacks/vaultwarden/compose.yaml" \
+      > ~/Documents/homelab/configs/apps/vaultwarden/compose.yaml
+
+Authorization chain: the Mac SSHes into the PVE host as root, the host runs
+`pct exec` as root, and the file streams back over the same connection.
+Reversed, the same pipe pushes a repo file back into a container on deploy.
+
+### Music library split
+
+Problem: one shared `Music` library means one person's shuffle is everyone's
+shuffle — Sinatra surfacing between Avicii and ADELA.
+
+Fix: sibling directories per audience (`My Music`, `Family Music`,
+`Guest Music`), each mounted into Jellyfin as a separate library so the
+library boundary is the persona boundary. Backup behavior follows directory
+boundaries: the parent `music` tree is included in the nightly sync; bulk,
+disposable media stays outside it so the 1 TB backup target does not fill
+with shows. (Backup script excludes to be documented in `configs/host/` once
+edited.)

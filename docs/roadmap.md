@@ -1,11 +1,10 @@
 # Roadmap
 
 ## Security hardening
-- [ ] Tailscale: MFA on the identity provider, Tailnet Lock, and ACLs limiting
+- [X] Tailscale: MFA on the identity provider, Tailnet Lock, and ACLs limiting
       shared users to the Jellyfin ports
 - [ ] SSH key authentication; disable password and direct root login
-- [ ] Remove unneeded packages from the Podman container
-- [ ] Self-hosted ntfy for alerts
+- [X] Remove unneeded packages from the Podman container
 
 ## Resilience
 - [ ] Rehearse a container restore from vzdump
@@ -30,22 +29,17 @@
       
 ## Follow-ons discovered during the SearXNG build
 
-- [ ] Route SearXNG's outbound requests through a VPN or Tor exit, so upstream
-      engines see an IP that is not my home address (closes the single-user
-      instance attribution gap)
-- [ ] Restrict the raw `:8888` port bind to loopback only, now that
+- [X] Restrict the raw `:8888` port bind to loopback only, now that
       `tailscale serve` is the front door (reduces exposed surface)
-- [ ] Evaluate Orion (Kagi) as an alternative iOS browser — native WebKit,
+- [X] Evaluate Orion (Kagi) as an alternative iOS browser — native WebKit,
       supports desktop extensions, prompts for search engine on first launch
 - [ ] Self-host ntfy (currently relaying through public ntfy.sh; also carries
       the unresolved iOS lock-screen push delivery issue)
-- [ ] Vaultwarden on CT 103 — password/passkey autofill replacing iCloud
+- [X] Vaultwarden on CT 103 — password/passkey autofill replacing iCloud
       Keychain; requires backup integration designed before go-live
 
-    
-
 ## Hardware
-- [ ] Swap the GTX 1060 for a GTX 1660 (Turing NVENC: better quality per
+- [ ] Swap GTX 1060 for a GTX 1660 (Turing NVENC: better quality per
       bitrate, 6 GB VRAM for ML workloads), same 580 driver branch
 
 ## Media
@@ -53,6 +47,13 @@
 - [ ] Episode thumbnails generated from title-card frames via chapter markers
 
 ## Related project
-- A JavaFX front end for rsync transfers with verification and safe batch
+- [ ] A JavaFX front end for rsync transfers with verification and safe batch
   renaming (separate repository).
-
+- [X] Expose Vaultwarden through `tailscale serve` on CT 103 (the Jellyfin HTTPS
+  pattern) rather than widening the port bind.
+- [ ] Finish the music directory migration and edit the nightly backup script's
+  includes/excludes; verify sizes with `du -sh` before and after.
+- [ ] Write a `pull-configs.sh` on the Mac that gathers all four CTs' configs in
+  one command.
+- [ ] Confirm Podman's network driver honors loopback-only port binds as
+  expected.
