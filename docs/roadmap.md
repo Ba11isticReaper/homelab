@@ -9,8 +9,8 @@
 ## Resilience
 - [ ] Rehearse a container restore from vzdump
 - [ ] Offsite, encrypted backup copy (3-2-1)
-- [ ] ZFS mirror for the data drive
-- [ ] Planned reboot test: every container and service returns unattended
+- [X] ZFS mirror for the data drive
+- [X] Planned reboot test: every container and service returns unattended
 
 ## Services (Podman, CT 103)
 - [X] SearXNG: private metasearch for my own devices over Tailscale
@@ -39,7 +39,7 @@
       Keychain; requires backup integration designed before go-live
 
 ## Hardware
-- [ ] Swap GTX 1060 for a GTX 1660 (Turing NVENC: better quality per
+- [X] Swap GTX 1060 for a GTX 1660 (Turing NVENC: better quality per
       bitrate, 6 GB VRAM for ML workloads), same 580 driver branch
 
 ## Media
@@ -51,7 +51,7 @@
   renaming (separate repository).
 - [X] Expose Vaultwarden through `tailscale serve` on CT 103 (the Jellyfin HTTPS
   pattern) rather than widening the port bind.
-- [ ] Finish the music directory migration and edit the nightly backup script's
+- [X] Finish the music directory migration and edit the nightly backup script's
   includes/excludes; verify sizes with `du -sh` before and after.
 - [ ] Write a `pull-configs.sh` on the Mac that gathers all four CTs' configs in
   one command.
